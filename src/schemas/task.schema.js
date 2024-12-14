@@ -1,30 +1,5 @@
 const { paginationSchema, paramsWithTenantSchema, headersSchema } = require('./base.schema');
-
-const taskProperties = {
-  title: { type: 'string', minLength: 1, maxLength: 255 },
-  description: { type: 'string' },
-  assignedTo: { type: 'integer' },
-  deadline: { type: 'string', format: 'date-time' },
-  status: { 
-    type: 'string', 
-    enum: ['pending', 'in_progress', 'completed', 'blocked']
-  },
-  priority: {
-    type: 'string',
-    enum: ['low', 'medium', 'high', 'urgent']
-  }
-};
-
-const taskResponseProperties = {
-  ...taskProperties,
-  id: { type: 'integer' },
-  createdBy: { type: 'integer' },
-  createdAt: { type: 'string', format: 'date-time' },
-  updatedAt: { type: 'string', format: 'date-time' },
-  deletedAt: { type: 'string', format: 'date-time', nullable: true },
-  creatorName: { type: 'string' },
-  assigneeName: { type: 'string', nullable: true }
-};
+const { TaskProperties, TaskResponseProperties } = require('../types/Task');
 
 const taskSchema = {
   create: {
@@ -32,7 +7,7 @@ const taskSchema = {
     params: paramsWithTenantSchema,
     body: {
       type: 'object',
-      properties: taskProperties,
+      properties: TaskProperties,
       required: ['title'],
       additionalProperties: false
     },
@@ -43,7 +18,7 @@ const taskSchema = {
           success: { type: 'boolean' },
           data: {
             type: 'object',
-            properties: taskResponseProperties
+            properties: TaskResponseProperties
           },
           message: { type: 'string' }
         }
@@ -58,9 +33,9 @@ const taskSchema = {
       type: 'object',
       properties: {
         ...paginationSchema.properties,
-        status: taskProperties.status,
-        priority: taskProperties.priority,
-        assignedTo: taskProperties.assignedTo
+        status: TaskProperties.status,
+        priority: TaskProperties.priority,
+        assignedTo: TaskProperties.assignedTo
       }
     },
     response: {
@@ -72,7 +47,7 @@ const taskSchema = {
             type: 'array',
             items: {
               type: 'object',
-              properties: taskResponseProperties
+              properties: TaskResponseProperties
             }
           },
           pagination: {
@@ -107,7 +82,7 @@ const taskSchema = {
           data: {
             type: 'object',
             properties: {
-              ...taskResponseProperties,
+              ...TaskResponseProperties,
               comments: {
                 type: 'array',
                 items: {

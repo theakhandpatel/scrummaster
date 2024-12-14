@@ -1,10 +1,25 @@
 const BaseModel = require('./baseModel');
+const { TaskProperties, TaskResponseProperties } = require('../types/Task');
 
+/**
+ * Model class for managing tasks.
+ * @extends BaseModel
+ */
 class TaskModel extends BaseModel {
+  /**
+   * Create an instance of TaskModel.
+   * @param {Object} pool - Database connection pool.
+   * @param {Object} cacheOptions - Cache options.
+   */
   constructor(pool, cacheOptions = {}) {
     super(pool, cacheOptions);
   }
 
+  /**
+   * Create a new task.
+   * @param {TaskProperties} data - Task data.
+   * @returns {Promise<TaskResponseProperties>} The created task.
+   */
   async create(data) {
     const { rows: [task] } = await this.pool.query(
       `INSERT INTO tasks (
@@ -26,6 +41,12 @@ class TaskModel extends BaseModel {
     return task;
   }
 
+  /**
+   * Find all tasks with optional filters.
+   * @param {Object} filters - Filters to apply to the task list.
+   * @param {boolean} [includeDeleted=false] - Whether to include deleted tasks.
+   * @returns {Promise<Array<TaskResponseProperties>>} List of tasks.
+   */
   async findAll(filters = {}, includeDeleted = false) {
     const cacheKey = this.generateListCacheKey(
       `filters:${JSON.stringify(filters)}:deleted:${includeDeleted}`
@@ -77,6 +98,12 @@ class TaskModel extends BaseModel {
     return rows;
   }
 
+  /**
+   * Find a task by its ID.
+   * @param {number} id - ID of the task.
+   * @param {boolean} [includeDeleted=false] - Whether to include deleted tasks.
+   * @returns {Promise<TaskResponseProperties>} The task.
+   */
   async findById(id, includeDeleted = false) {
     const cacheKey = this.generateCacheKey(`${id}:${includeDeleted}`);
     const cachedTask = await this.cache.get(cacheKey);
@@ -122,6 +149,12 @@ class TaskModel extends BaseModel {
     return task;
   }
 
+  /**
+   * Update a task by its ID.
+   * @param {number} id - ID of the task.
+   * @param {TaskProperties} data - Data to update the task with.
+   * @returns {Promise<TaskResponseProperties>} The updated task.
+   */
   async update(id, data) {
     const { rows: [task] } = await this.pool.query(
       `UPDATE tasks SET 
@@ -150,6 +183,11 @@ class TaskModel extends BaseModel {
     return task;
   }
 
+  /**
+   * Soft delete a task by its ID.
+   * @param {number} id - ID of the task.
+   * @returns {Promise<TaskResponseProperties>} The soft deleted task.
+   */
   async softDelete(id) {
     const { rows: [task] } = await this.pool.query(
       'UPDATE tasks SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL RETURNING *',

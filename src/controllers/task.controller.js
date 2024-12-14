@@ -1,7 +1,17 @@
+const { TaskProperties, TaskResponseProperties } = require('../types/Task');
 const TaskService = require('../services/task.service');
 const ResponseFormatter = require('../utils/responseFormatter');
 
+/**
+ * Controller class for managing tasks.
+ */
 class TaskController {
+  /**
+   * Create a new task.
+   * @param {Object} request - Fastify request object.
+   * @param {Object} reply - Fastify reply object.
+   * @returns {Promise<void>}
+   */
   static async createTask(request, reply) {
     try {
       const { tenantId } = request.params;
@@ -13,6 +23,12 @@ class TaskController {
     }
   }
 
+  /**
+   * Get a list of tasks with optional filters.
+   * @param {Object} request - Fastify request object.
+   * @param {Object} reply - Fastify reply object.
+   * @returns {Promise<void>}
+   */
   static async getTasks(request, reply) {
     try {
       const { tenantId } = request.params;
@@ -36,6 +52,12 @@ class TaskController {
     }
   }
 
+  /**
+   * Get a task by its ID.
+   * @param {Object} request - Fastify request object.
+   * @param {Object} reply - Fastify reply object.
+   * @returns {Promise<void>}
+   */
   static async getTask(request, reply) {
     try {
       const { tenantId, taskId } = request.params;
@@ -53,6 +75,12 @@ class TaskController {
     }
   }
 
+  /**
+   * Update a task by its ID.
+   * @param {Object} request - Fastify request object.
+   * @param {Object} reply - Fastify reply object.
+   * @returns {Promise<void>}
+   */
   static async updateTask(request, reply) {
     try {
       const { tenantId, taskId } = request.params;
@@ -70,6 +98,12 @@ class TaskController {
     }
   }
 
+  /**
+   * Soft delete a task by its ID.
+   * @param {Object} request - Fastify request object.
+   * @param {Object} reply - Fastify reply object.
+   * @returns {Promise<void>}
+   */
   static async deleteTask(request, reply) {
     try {
       const { tenantId, taskId } = request.params;
@@ -81,6 +115,12 @@ class TaskController {
     }
   }
 
+  /**
+   * Add a comment to a task.
+   * @param {Object} request - Fastify request object.
+   * @param {Object} reply - Fastify reply object.
+   * @returns {Promise<void>}
+   */
   static async addComment(request, reply) {
     try {
       const { tenantId, taskId } = request.params;
