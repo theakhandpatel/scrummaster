@@ -1,3 +1,7 @@
+/**
+ * Redis configuration.
+ * @type {Redis}
+ */
 const Redis = require('ioredis');
 
 const redis = new Redis({
@@ -10,10 +14,19 @@ const redis = new Redis({
   }
 });
 
+/**
+ * Redis connection error event handler.
+ * @param {Error} err - Redis connection error.
+ * @returns {void}
+ */
 redis.on('error', (err) => {
   console.error('Redis connection error:', err);
 });
 
+/**
+ * Redis connect event handler.
+ * @returns {void}
+ */
 redis.on('connect', () => {
   console.log('Successfully connected to Redis');
 });
