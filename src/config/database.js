@@ -20,16 +20,16 @@ async function getTenantPool(tenantId) {
 
   const client = await adminPool.connect();
   try {
-    const { rows } = await client.query(
+    const { tenantRows } = await client.query(
       'SELECT db_name, db_user, db_password FROM tenants WHERE id = $1',
       [tenantId]
     );
 
-    if (rows.length === 0) {
+    if (tenantRows.length === 0) {
       throw new Error(`Tenant ${tenantId} not found`);
     }
 
-    const { db_name, db_user, db_password } = rows[0];
+    const { db_name, db_user, db_password } = tenantRows[0];
     const pool = new Pool({
       user: db_user,
       password: db_password,

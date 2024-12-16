@@ -21,11 +21,11 @@ class DatabaseDispatcher {
   async verifyTenantApiKey(apiKey) {
     const client = await adminPool.connect();
     try {
-      const { rows } = await client.query(
+      const { tenantRows } = await client.query(
         'SELECT id FROM tenants WHERE api_key = $1 AND deleted_at IS NULL',
         [apiKey]
       );
-      return rows[0] || null;
+      return tenantRows[0] || null;
     } finally {
       client.release();
     }
