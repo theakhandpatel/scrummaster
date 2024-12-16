@@ -1,8 +1,8 @@
 const BaseModel = require('./baseModel');
 
 class TaskModel extends BaseModel {
-  constructor(pool, cacheOptions = {}) {
-    super(pool, cacheOptions);
+  constructor(pool) {
+    super(pool);
   }
 
   async create(data) {
@@ -21,20 +21,10 @@ class TaskModel extends BaseModel {
         data.priority || 'medium'
       ]
     );
-    
-    await this.cache.delPattern('list:*');
     return task;
   }
 
   async findAll(filters = {}, includeDeleted = false) {
-    const cacheKey = this.generateListCacheKey(
-      `filters:${JSON.stringify(filters)}:deleted:${includeDeleted}`
-    );
-    
-    const cachedTasks = await this.cache.get(cacheKey);
-    if (cachedTasks) {
-      return cachedTasks;
-    }
 
     let query = 'SELECT t.*, u1.display_name as creator_name, u2.display_name as assignee_name FROM tasks t';
     query += ' LEFT JOIN users u1 ON t.created_by = u1.id';
@@ -73,17 +63,11 @@ class TaskModel extends BaseModel {
     query += ' ORDER BY t.created_at DESC';
 
     const { rows } = await this.pool.query(query, params);
-    await this.cache.set(cacheKey, rows);
+
     return rows;
   }
 
   async findById(id, includeDeleted = false) {
-    const cacheKey = this.generateCacheKey(`${id}:${includeDeleted}`);
-    const cachedTask = await this.cache.get(cacheKey);
-    
-    if (cachedTask) {
-      return cachedTask;
-    }
 
     let query = `
       SELECT t.*, 
@@ -114,10 +98,6 @@ class TaskModel extends BaseModel {
     query += ' GROUP BY t.id, u1.display_name, u2.display_name';
 
     const { rows: [task] } = await this.pool.query(query, [id]);
-
-    if (task) {
-      await this.cache.set(cacheKey, task);
-    }
     
     return task;
   }
@@ -144,8 +124,6 @@ class TaskModel extends BaseModel {
       ]
     );
 
-    await this.cache.del(this.generateCacheKey(id));
-    await this.cache.delPattern('list:*');
     
     return task;
   }
@@ -155,9 +133,6 @@ class TaskModel extends BaseModel {
       'UPDATE tasks SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL RETURNING *',
       [id]
     );
-    
-    await this.cache.del(this.generateCacheKey(id));
-    await this.cache.delPattern('list:*');
     
     return task;
   }

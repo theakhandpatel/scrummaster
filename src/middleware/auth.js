@@ -1,4 +1,4 @@
-const { adminPool } = require('../config/database');
+const dispatcher = require('../dispatchers/DatabaseDispatcher');
 const createError = require('http-errors');
 
 async function validateApiKey(request, reply) {
@@ -8,18 +8,9 @@ async function validateApiKey(request, reply) {
     throw createError(401, 'API key is required');
   }
 
-  const client = await adminPool.connect();
-  try {
-    const { rows } = await client.query(
-      'SELECT id FROM api_keys WHERE key = $1 AND deleted_at IS NULL',
-      [apiKey]
-    );
-
-    if (rows.length === 0) {
-      throw createError(401, 'Invalid API key');
-    }
-  } finally {
-    client.release();
+  const isValid = await dispatcher.verifyAdminApiKey(apiKey);
+  if (!isValid) {
+    throw createError(401, 'Invalid API key');
   }
 }
 
@@ -30,27 +21,18 @@ async function validateTenantApiKey(request, reply) {
     throw createError(401, 'Tenant API key is required');
   }
 
-  const client = await adminPool.connect();
-  try {
-    const { rows } = await client.query(
-      'SELECT id FROM tenants WHERE api_key = $1 AND deleted_at IS NULL',
-      [tenantApiKey]
-    );
-
-    if (rows.length === 0) {
-      throw createError(401, 'Invalid tenant API key');
-    }
-
-    // Verify that the API key belongs to the requested tenant
-    const tenantId = parseInt(request.params.tenantId);
-    if (tenantId !== rows[0].id) {
-      throw createError(403, 'API key does not match tenant');
-    }
-
-    request.tenantId = rows[0].id;
-  } finally {
-    client.release();
+  const tenant = await dispatcher.verifyTenantApiKey(tenantApiKey);
+  if (!tenant) {
+    throw createError(401, 'Invalid tenant API key');
   }
+
+  // Verify that the API key belongs to the requested tenant
+  const tenantId = parseInt(request.params.tenantId);
+  if (tenantId !== tenant.id) {
+    throw createError(403, 'API key does not match tenant');
+  }
+
+  request.tenantId = tenant.id;
 }
 
 module.exports = {

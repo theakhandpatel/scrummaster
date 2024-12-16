@@ -1,45 +1,58 @@
-const CommentModel = require('../models/comment');
-const { getTenantPool } = require('../config/database');
+const dispatcher = require('../dispatchers/DatabaseDispatcher');
+const createError = require('http-errors');
 
 class CommentService {
   static async addComment(tenantId, taskId, commentData) {
-    const pool = await getTenantPool(tenantId);
-    const commentModel = new CommentModel(pool, {
-      prefix: `tenant:${tenantId}:comments`,
-      ttl: 1800,
-      enabled: true
-    });
-    return await commentModel.create({ ...commentData, taskId });
+    const comment = await dispatcher
+      .getTenant(tenantId)
+      .Comments
+      .create({ ...commentData, taskId });
+    return comment;
   }
 
   static async getComments(tenantId, taskId) {
-    const pool = await getTenantPool(tenantId);
-    const commentModel = new CommentModel(pool, {
-      prefix: `tenant:${tenantId}:comments`,
-      ttl: 1800,
-      enabled: true
-    });
-    return await commentModel.findByTaskId(taskId);
+    const comments = await dispatcher
+      .getTenant(tenantId)
+      .Comments
+      .findByTaskId(taskId);
+    
+    if (!comments) {
+      throw createError(404, 'No comments found');
+    }
+    
+    return comments;
   }
 
   static async getComment(tenantId, taskId, commentId) {
-    const pool = await getTenantPool(tenantId);
-    const commentModel = new CommentModel(pool, {
-      prefix: `tenant:${tenantId}:comments`,
-      ttl: 1800,
-      enabled: true
-    });
-    return await commentModel.findById(commentId, taskId);
+    const comment = await dispatcher
+      .getTenant(tenantId)
+      .Comments
+      .findById(commentId);
+    
+    if (!comment) {
+      throw createError(404, 'Comment not found');
+    }
+    
+    if (comment.taskId !== parseInt(taskId)) {
+      throw createError(404, 'Comment not found for this task');
+    }
+    
+    return comment;
   }
 
   static async deleteComment(tenantId, taskId, commentId) {
-    const pool = await getTenantPool(tenantId);
-    const commentModel = new CommentModel(pool, {
-      prefix: `tenant:${tenantId}:comments`,
-      ttl: 1800,
-      enabled: true
-    });
-    await commentModel.softDelete(commentId, taskId);
+    const comment = await dispatcher
+      .getTenant(tenantId)
+      .Comments
+      .softDelete(commentId);
+    
+    if (!comment) {
+      throw createError(404, 'Comment not found');
+    }
+    
+    if (comment.taskId !== parseInt(taskId)) {
+      throw createError(404, 'Comment not found for this task');
+    }
   }
 }
 

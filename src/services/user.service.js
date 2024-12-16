@@ -1,65 +1,68 @@
-const UserModel = require('../models/user');
-const { getTenantPool } = require('../config/database');
+const dispatcher = require('../dispatchers/DatabaseDispatcher');
+const createError = require('http-errors');
 
 class UserService {
   static async createUser(tenantId, userData) {
-    const pool = await getTenantPool(tenantId);
-    const userModel = new UserModel(pool, {
-      prefix: `tenant:${tenantId}:users`,
-      ttl: 3600,
-      enabled: true
-    });
-    return await userModel.create(userData);
+    const user = await dispatcher
+      .getTenant(tenantId)
+      .Users
+      .create(userData);
+    return user;
   }
 
   static async getUsers(tenantId, { page, limit }) {
-    const pool = await getTenantPool(tenantId);
-    const userModel = new UserModel(pool, {
-      prefix: `tenant:${tenantId}:users`,
-      ttl: 3600,
-      enabled: true
-    });
+    const users = await dispatcher
+      .getTenant(tenantId)
+      .Users
+      .findAll(false, limit, (page - 1) * limit);
     
-    const offset = (page - 1) * limit;
-    const users = await userModel.findAll(false, limit, offset);
-    const total = await userModel.count();
+    const total = await dispatcher
+      .getTenant(tenantId)
+      .Users
+      .count();
 
-    return {
-      users,
-      page,
-      limit,
-      total
-    };
+    if (!users) {
+      throw createError(404, 'No users found');
+    }
+
+    return { users, page, limit, total };
   }
 
   static async getUser(tenantId, userId) {
-    const pool = await getTenantPool(tenantId);
-    const userModel = new UserModel(pool, {
-      prefix: `tenant:${tenantId}:users`,
-      ttl: 3600,
-      enabled: true
-    });
-    return await userModel.findById(userId);
+    const user = await dispatcher
+      .getTenant(tenantId)
+      .Users
+      .findById(userId);
+    
+    if (!user) {
+      throw createError(404, 'User not found');
+    }
+    
+    return user;
   }
 
   static async updateUser(tenantId, userId, userData) {
-    const pool = await getTenantPool(tenantId);
-    const userModel = new UserModel(pool, {
-      prefix: `tenant:${tenantId}:users`,
-      ttl: 3600,
-      enabled: true
-    });
-    return await userModel.update(userId, userData);
+    const user = await dispatcher
+      .getTenant(tenantId)
+      .Users
+      .update(userId, userData);
+    
+    if (!user) {
+      throw createError(404, 'User not found');
+    }
+    
+    return user;
   }
 
   static async deleteUser(tenantId, userId) {
-    const pool = await getTenantPool(tenantId);
-    const userModel = new UserModel(pool, {
-      prefix: `tenant:${tenantId}:users`,
-      ttl: 3600,
-      enabled: true
-    });
-    await userModel.softDelete(userId);
+    const user = await dispatcher
+      .getTenant(tenantId)
+      .Users
+      .softDelete(userId);
+    
+    if (!user) {
+      throw createError(404, 'User not found');
+    }
   }
 }
 

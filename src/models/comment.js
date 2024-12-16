@@ -1,8 +1,8 @@
 const BaseModel = require('./baseModel');
 
 class CommentModel extends BaseModel {
-  constructor(pool, cacheOptions = {}) {
-    super(pool, cacheOptions);
+  constructor(pool) {
+    super(pool);
   }
 
   async create(data) {
@@ -10,9 +10,7 @@ class CommentModel extends BaseModel {
       'INSERT INTO comments (task_id, user_id, content) VALUES ($1, $2, $3) RETURNING *',
       [data.taskId, data.userId, data.content]
     );
-    
-    // Invalidate task cache since comments are included in task details
-    await this.cache.del(`TaskModel:${data.taskId}`);
+
     return comment;
   }
 
@@ -24,17 +22,6 @@ class CommentModel extends BaseModel {
       RETURNING *`,
       [data.content, id]
     );
-
-    if (comment) {
-      // Invalidate task cache
-      const { rows: [task] } = await this.pool.query(
-        'SELECT task_id FROM comments WHERE id = $1',
-        [id]
-      );
-      if (task) {
-        await this.cache.del(`TaskModel:${task.task_id}`);
-      }
-    }
     
     return comment;
   }
@@ -44,17 +31,6 @@ class CommentModel extends BaseModel {
       'UPDATE comments SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL RETURNING *',
       [id]
     );
-    
-    if (comment) {
-      // Invalidate task cache
-      const { rows: [task] } = await this.pool.query(
-        'SELECT task_id FROM comments WHERE id = $1',
-        [id]
-      );
-      if (task) {
-        await this.cache.del(`TaskModel:${task.task_id}`);
-      }
-    }
     
     return comment;
   }

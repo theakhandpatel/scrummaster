@@ -17,26 +17,7 @@ const commentRoutes = require('./routes/comment.routes');
 const errorHandler = require('./plugins/errorHandler');
 const CacheConfig = require('./config/cache');
 
-// Configure global cache settings
-CacheConfig.setGlobalConfig({
-  enabled: true,
-  ttl: 3600,
-  prefix: 'api',
-  models: {
-    TaskModel: {
-      ttl: 1800,
-      prefix: 'tasks'
-    },
-    UserModel: {
-      ttl: 3600,
-      prefix: 'users'
-    },
-    CommentModel: {
-      ttl: 1800,
-      prefix: 'comments'
-    }
-  }
-});
+
 
 // Register plugins
 fastify.register(errorHandler);

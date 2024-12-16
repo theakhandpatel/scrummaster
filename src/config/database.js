@@ -1,9 +1,6 @@
 const { Pool } = require('pg');
 
-/**
- * Admin database connection pool.
- * @type {Pool}
- */
+// Admin database connection pool
 const adminPool = new Pool({
   user: 'postgres',
   password: 'postgres',
@@ -12,18 +9,10 @@ const adminPool = new Pool({
   database: 'admin_db'
 });
 
-/**
- * Tenant connection pools cache.
- * @type {Map<number, Pool>}
- */
+// Tenant connection pools cache
 const tenantPools = new Map();
 
-/**
- * Get or create tenant connection pool.
- * @param {number} tenantId - ID of the tenant.
- * @returns {Promise<Pool>} Tenant connection pool.
- * @throws {Error} If tenant is not found.
- */
+// Get or create tenant connection pool
 async function getTenantPool(tenantId) {
   if (tenantPools.has(tenantId)) {
     return tenantPools.get(tenantId);
