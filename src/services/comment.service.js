@@ -1,59 +1,72 @@
-const dispatcher = require('../dispatchers/DatabaseDispatcher');
-const createError = require('http-errors');
+import Dispatcher from '../dispatchers/DatabaseDispatcher';
+import { adaptDatabaseError } from '../utils/errors/errorHandler';
 
 class CommentService {
-  static async addComment(tenantId, taskId, commentData) {
-    const comment = await dispatcher
-      .getTenant(tenantId)
+  static async addComment(tenantId, taskId, newCommentData) {
+    const [err, comment] = await Dispatcher.getTenant(tenantId)
       .Comments
-      .create({ ...commentData, taskId });
-    return comment;
+      .create({ ...newCommentData, taskId });
+
+    if (err) {
+      return [adaptDatabaseError(err, { operation: 'create', resource: 'Comment' }), null];
+    }
+
+    return [null, comment];
   }
 
   static async getComments(tenantId, taskId) {
-    const comments = await dispatcher
-      .getTenant(tenantId)
+    const [err, comments] = await Dispatcher.getTenant(tenantId)
       .Comments
       .findByTaskId(taskId);
-    
-    if (!comments) {
-      throw createError(404, 'No comments found');
+
+    if (err || !comments) {
+      return [adaptDatabaseError(err, { operation: 'read', resource: 'Comments' }), null];
     }
-    
-    return comments;
+
+    return [null, comments];
   }
 
   static async getComment(tenantId, taskId, commentId) {
-    const comment = await dispatcher
-      .getTenant(tenantId)
+    const [err, comment] = await Dispatcher.getTenant(tenantId)
       .Comments
       .findById(commentId);
-    
-    if (!comment) {
-      throw createError(404, 'Comment not found');
+
+    if (err || !comment) {
+      return [adaptDatabaseError(err, { operation: 'read', resource: 'Comment' }), null];
     }
-    
+
     if (comment.taskId !== parseInt(taskId)) {
-      throw createError(404, 'Comment not found for this task');
+      return [adaptDatabaseError(new Error('Comment does not belong to this task'), 
+        { operation: 'read', resource: 'Comment' }), null];
     }
-    
-    return comment;
+
+    return [null, comment];
   }
 
   static async deleteComment(tenantId, taskId, commentId) {
-    const comment = await dispatcher
-      .getTenant(tenantId)
+    const [err, comment] = await Dispatcher.getTenant(tenantId)
+      .Comments
+      .findById(commentId);
+
+    if (err || !comment) {
+      return [adaptDatabaseError(err, { operation: 'read', resource: 'Comment' }), null];
+    }
+
+    if (comment.taskId !== parseInt(taskId)) {
+      return [adaptDatabaseError(new Error('Comment does not belong to this task'), 
+        { operation: 'read', resource: 'Comment' }), null];
+    }
+
+    const [deleteErr] = await Dispatcher.getTenant(tenantId)
       .Comments
       .softDelete(commentId);
-    
-    if (!comment) {
-      throw createError(404, 'Comment not found');
+
+    if (deleteErr) {
+      return [adaptDatabaseError(deleteErr, { operation: 'delete', resource: 'Comment' }), null];
     }
-    
-    if (comment.taskId !== parseInt(taskId)) {
-      throw createError(404, 'Comment not found for this task');
-    }
+
+    return [null, true];
   }
 }
 
-module.exports = CommentService;
+export default CommentService;

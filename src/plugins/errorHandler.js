@@ -1,5 +1,5 @@
-const fp = require('fastify-plugin');
-const createError = require('http-errors');
+import fp from 'fastify-plugin';
+import { isHttpError } from 'http-errors';
 
 async function errorHandler(fastify) {
   fastify.setErrorHandler((error, request, reply) => {
@@ -17,7 +17,7 @@ async function errorHandler(fastify) {
     }
 
     // Handle HTTP errors
-    if (createError.isHttpError(error)) {
+    if (isHttpError(error)) {
       reply.status(error.statusCode).send({
         success: false,
         error: {
@@ -52,4 +52,4 @@ async function errorHandler(fastify) {
   });
 }
 
-module.exports = fp(errorHandler);
+export default fp(errorHandler);
