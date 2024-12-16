@@ -1,69 +1,70 @@
-const dispatcher = require('../dispatchers/DatabaseDispatcher');
-const createError = require('http-errors');
+import Dispatcher from '../dispatchers/DatabaseDispatcher';
+import { adaptDatabaseError } from '../utils/errors/databaseErrorAdapter';
 
 class UserService {
-  static async createUser(tenantId, userData) {
-    const user = await dispatcher
-      .getTenant(tenantId)
+  static async createUser(tenantId, newUserData) {
+    const [err, user] = await Dispatcher.getTenant(tenantId)
       .Users
-      .create(userData);
-    return user;
+      .create(newUserData);
+
+    if (err) {
+      return [adaptDatabaseError(err, { operation: 'create', resource: 'User' }), null];
+    }
+
+    return [null, user];
   }
 
   static async getUsers(tenantId, { page, limit }) {
-    const users = await dispatcher
-      .getTenant(tenantId)
+    const [err, users] = await Dispatcher.getTenant(tenantId)
       .Users
       .findAll(false, limit, (page - 1) * limit);
     
-    const total = await dispatcher
-      .getTenant(tenantId)
+    if (err || !users) {
+      return [adaptDatabaseError(err, { operation: 'read', resource: 'Users' }), null];
+    }
+
+    const [countErr, total] = await Dispatcher.getTenant(tenantId)
       .Users
       .count();
 
-    if (!users) {
-      throw createError(404, 'No users found');
-    }
-
-    return { users, page, limit, total };
+    return [null, { users, page, limit, total }];
   }
 
   static async getUser(tenantId, userId) {
-    const user = await dispatcher
-      .getTenant(tenantId)
+    const [err, user] = await Dispatcher.getTenant(tenantId)
       .Users
       .findById(userId);
     
-    if (!user) {
-      throw createError(404, 'User not found');
+    if (err || !user) {
+      return [adaptDatabaseError(err, { operation: 'read', resource: 'User' }), null];
     }
     
-    return user;
+    return [null, user];
   }
 
-  static async updateUser(tenantId, userId, userData) {
-    const user = await dispatcher
-      .getTenant(tenantId)
+  static async updateUser(tenantId, userId, newUserData) {
+    const [err, user] = await Dispatcher.getTenant(tenantId)
       .Users
-      .update(userId, userData);
+      .update(userId, newUserData);
     
-    if (!user) {
-      throw createError(404, 'User not found');
+    if (err || !user) {
+      return [adaptDatabaseError(err, { operation: 'update', resource: 'User' }), null];
     }
     
-    return user;
+    return [null, user];
   }
 
   static async deleteUser(tenantId, userId) {
-    const user = await dispatcher
-      .getTenant(tenantId)
+    const [err, user] = await Dispatcher.getTenant(tenantId)
       .Users
       .softDelete(userId);
     
-    if (!user) {
-      throw createError(404, 'User not found');
+    if (err || !user) {
+      return [adaptDatabaseError(err, { operation: 'delete', resource: 'User' }), null];
     }
+
+    return [null, true];
   }
 }
 
-module.exports = UserService;
+export default UserService;

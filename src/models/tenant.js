@@ -1,5 +1,5 @@
-const { adminPool } = require('../config/database');
-const { generateApiKey } = require('../utils/apiKey');
+import { adminPool } from '../config/database';
+import { generateApiKey } from '../utils/apiKey';
 
 class TenantModel {
   static async create(name) {
@@ -45,4 +45,4 @@ class TenantModel {
   }
 }
 
-module.exports = TenantModel;
+export default TenantModel;

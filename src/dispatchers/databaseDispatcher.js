@@ -1,5 +1,5 @@
-const { adminPool, getTenantPool } = require('../config/database');
-const TenantContext = require('./TenantContext');
+import { adminPool } from '../config/database';
+import TenantContext from './tenantContext';
 
 class DatabaseDispatcher {
   constructor() {
@@ -11,8 +11,7 @@ class DatabaseDispatcher {
       return this.tenantContexts.get(tenantId);
     }
 
-    const pool = await getTenantPool(tenantId);
-    const context = new TenantContext(pool, tenantId);
+    const context = await TenantContext.Create(tenantId);
     this.tenantContexts.set(tenantId, context);
     return context;
   }
@@ -21,11 +20,11 @@ class DatabaseDispatcher {
   async verifyTenantApiKey(apiKey) {
     const client = await adminPool.connect();
     try {
-      const { rows } = await client.query(
+      const { tenantRows } = await client.query(
         'SELECT id FROM tenants WHERE api_key = $1 AND deleted_at IS NULL',
         [apiKey]
       );
-      return rows[0] || null;
+      return tenantRows[0] || null;
     } finally {
       client.release();
     }
@@ -35,12 +34,15 @@ class DatabaseDispatcher {
     return apiKey === process.env.ADMIN_API_KEY;
   }
 
-  // Clear cached contexts (useful for testing or memory management)
   clearCache() {
+    // Close all pool connections before clearing
+    for (const context of this.tenantContexts.values()) {
+      context.pool.end();
+    }
     this.tenantContexts.clear();
   }
 }
 
 // Singleton instance
 const dispatcher = new DatabaseDispatcher();
-module.exports = dispatcher;
+export default dispatcher;

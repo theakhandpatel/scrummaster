@@ -1,64 +1,72 @@
-const dispatcher = require('../dispatchers/DatabaseDispatcher');
-const createError = require('http-errors');
+import Dispatcher from '../dispatchers/DatabaseDispatcher';
+import { adaptDatabaseError } from '../utils/errors/databaseErrorAdapter';
+
 
 class TaskService {
-  static async createTask(tenantId, taskData) {
-    const task = await dispatcher
+  static async createTask(tenantId, newTaskData) {
+    const [err, task] = await Dispatcher
       .getTenant(tenantId)
       .Tasks
-      .create(taskData);
-    return task;
+      .create(newTaskData);
+
+    if (err) {
+      return [adaptDatabaseError(err, { operation: 'create', resource: 'Task' }), null];
+    }
+
+    return [null, task];
   }
 
   static async getTasks(tenantId, filters = {}) {
-    const tasks = await dispatcher
+    const [err, tasks] = await Dispatcher
       .getTenant(tenantId)
       .Tasks
       .findAll(filters);
-    
-    if (!tasks) {
-      throw createError(404, 'No tasks found');
+
+    if (err || !tasks) {
+      return [adaptDatabaseError(err, { operation: 'read', resource: 'Tasks' }), null];
     }
-    
-    return tasks;
+
+    return [null, tasks];
   }
 
   static async getTask(tenantId, taskId) {
-    const task = await dispatcher
+    const [err, task] = await Dispatcher
       .getTenant(tenantId)
       .Tasks
       .findById(taskId);
-    
-    if (!task) {
-      throw createError(404, 'Task not found');
+
+    if (err || !task) {
+      return [adaptDatabaseError(err, { operation: 'read', resource: 'Task' }), null];
     }
-    
-    return task;
+
+    return [null, task];
   }
 
-  static async updateTask(tenantId, taskId, taskData) {
-    const task = await dispatcher
+  static async updateTask(tenantId, taskId, newTaskData) {
+    const [err, task] = await Dispatcher
       .getTenant(tenantId)
       .Tasks
-      .update(taskId, taskData);
-    
-    if (!task) {
-      throw createError(404, 'Task not found');
+      .update(taskId, newTaskData);
+
+    if (err || !task) {
+      return [adaptDatabaseError(err, { operation: 'update', resource: 'Task' }), null];
     }
-    
-    return task;
+
+    return [null, task];
   }
 
   static async deleteTask(tenantId, taskId) {
-    const task = await dispatcher
+    const [err, task] = await Dispatcher
       .getTenant(tenantId)
       .Tasks
       .softDelete(taskId);
-    
-    if (!task) {
-      throw createError(404, 'Task not found');
+
+    if (err || !task) {
+      return [adaptDatabaseError(err, { operation: 'delete', resource: 'Task' }), null];
     }
+
+    return [null, task];
   }
 }
 
-module.exports = TaskService;
+export default TaskService;

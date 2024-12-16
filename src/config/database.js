@@ -1,51 +1,49 @@
-const { Pool } = require('pg');
+import { Pool } from 'pg';
+
+// Format and validate environment variables
+const databaseConfig = {
+  user: process.env.DB_USER?.trim(),
+  password: process.env.DB_PASSWORD?.trim(),
+  host: process.env.DB_HOST?.trim() || 'localhost',
+  port: parseInt(process.env.DB_PORT?.trim() || '5432', 10),
+  database: process.env.ADMIN_DB_NAME?.trim()
+};
+
+// Validate required config
+if (!databaseConfig.user || !databaseConfig.password || !databaseConfig.database) {
+  throw new Error('Missing required database configuration environment variables');
+}
 
 // Admin database connection pool
-const adminPool = new Pool({
-  user: 'postgres',
-  password: 'postgres',
-  host: 'localhost',
-  port: 5432,
-  database: 'admin_db'
-});
+const adminPool = new Pool(databaseConfig);
 
-// Tenant connection pools cache
-const tenantPools = new Map();
-
-// Get or create tenant connection pool
-async function getTenantPool(tenantId) {
-  if (tenantPools.has(tenantId)) {
-    return tenantPools.get(tenantId);
-  }
-
+// Create new tenant pool configuration
+async function initializeTenantDbPool(tenantId) {
   const client = await adminPool.connect();
   try {
-    const { rows } = await client.query(
+    const { tenantRows } = await client.query(
       'SELECT db_name, db_user, db_password FROM tenants WHERE id = $1',
       [tenantId]
     );
 
-    if (rows.length === 0) {
+    if (tenantRows.length === 0) {
       throw new Error(`Tenant ${tenantId} not found`);
     }
 
-    const { db_name, db_user, db_password } = rows[0];
-    const pool = new Pool({
+    const { db_name, db_user, db_password } = tenantRows[0];
+    return new Pool({
       user: db_user,
       password: db_password,
-      host: 'localhost',
-      port: 5432,
+      host: databaseConfig.host,
+      port: databaseConfig.port,
       database: db_name
     });
-
-    tenantPools.set(tenantId, pool);
-    return pool;
   } finally {
     client.release();
   }
 }
 
-module.exports = {
+export default {
   adminPool,
-  getTenantPool
+  initializeTenantDbPool
 };

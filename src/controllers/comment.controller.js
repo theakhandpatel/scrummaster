@@ -1,50 +1,51 @@
-const CommentService = require('../services/comment.service');
-const ResponseFormatter = require('../utils/responseFormatter');
+import CommentService from '../services/comment.service';
+import ResponseFormatter from '../utils/responseFormatter';
+import { handleServiceError } from '../utils/errors/errorHandler.js';
 
 class CommentController {
-  static async addComment(request, reply) {
-    try {
-      const { tenantId, taskId } = request.params;
-      const comment = await CommentService.addComment(tenantId, taskId, request.body);
-      reply.code(201).send(ResponseFormatter.success(comment, 'Comment added successfully'));
-    } catch (error) {
-      reply.code(error.statusCode || 500)
-        .send(ResponseFormatter.error(error.message));
+  static async createComment(req, res) {
+    const { tenantId, taskId } = req.params;
+    const [error, comment] = await CommentService.addComment(tenantId, taskId, req.body);
+
+    if (error) {
+      return handleServiceError(error, res);
     }
+
+    return res.status(201).json(ResponseFormatter.success(comment, 'Comment created successfully'));
   }
 
-  static async getComments(request, reply) {
-    try {
-      const { tenantId, taskId } = request.params;
-      const comments = await CommentService.getComments(tenantId, taskId);
-      reply.send(ResponseFormatter.success(comments));
-    } catch (error) {
-      reply.code(error.statusCode || 500)
-        .send(ResponseFormatter.error(error.message));
+  static async getComments(req, res) {
+    const { tenantId, taskId } = req.params;
+    const [error, comments] = await CommentService.getComments(tenantId, taskId);
+
+    if (error) {
+      return handleServiceError(error, res);
     }
+
+    return res.json(ResponseFormatter.success(comments));
   }
 
-  static async getComment(request, reply) {
-    try {
-      const { tenantId, taskId, commentId } = request.params;
-      const comment = await CommentService.getComment(tenantId, taskId, commentId);
-      reply.send(ResponseFormatter.success(comment));
-    } catch (error) {
-      reply.code(error.statusCode || 500)
-        .send(ResponseFormatter.error(error.message));
+  static async getComment(req, res) {
+    const { tenantId, taskId, commentId } = req.params;
+    const [error, comment] = await CommentService.getComment(tenantId, taskId, commentId);
+
+    if (error) {
+      return handleServiceError(error, res);
     }
+
+    return res.json(ResponseFormatter.success(comment));
   }
 
-  static async deleteComment(request, reply) {
-    try {
-      const { tenantId, taskId, commentId } = request.params;
-      await CommentService.deleteComment(tenantId, taskId, commentId);
-      reply.code(204).send();
-    } catch (error) {
-      reply.code(error.statusCode || 500)
-        .send(ResponseFormatter.error(error.message));
+  static async deleteComment(req, res) {
+    const { tenantId, taskId, commentId } = req.params;
+    const [error, result] = await CommentService.deleteComment(tenantId, taskId, commentId);
+
+    if (error) {
+      return handleServiceError(error, res);
     }
+
+    return res.json(ResponseFormatter.success(null, 'Comment deleted successfully'));
   }
 }
 
-module.exports = CommentController;
+export default CommentController;
