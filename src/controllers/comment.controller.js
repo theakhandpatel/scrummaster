@@ -5,8 +5,8 @@ class CommentController {
   static async addComment(request, reply) {
     try {
       const { tenantId, taskId } = request.params;
-      const comment = await CommentService.addComment(tenantId, taskId, request.body);
-      reply.code(201).send(ResponseFormatter.success(comment, 'Comment added successfully'));
+      const newComment = await CommentService.addComment(tenantId, taskId, request.body);
+      reply.code(201).send(ResponseFormatter.success(newComment, 'Comment added successfully'));
     } catch (error) {
       reply.code(error.statusCode || 500)
         .send(ResponseFormatter.error(error.message));

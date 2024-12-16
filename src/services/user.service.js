@@ -2,26 +2,31 @@ const dispatcher = require('../dispatchers/DatabaseDispatcher');
 const createError = require('http-errors');
 
 class UserService {
-  static async createUser(tenantId, userData) {
-    const user = await dispatcher
+  static async createUser(tenantId, newUserData) {
+    const [err, newUser] = await dispatcher
       .getTenant(tenantId)
       .Users
-      .create(userData);
-    return user;
+      .create(newUserData);
+
+    if (err) {
+      throw createError(500, 'Failed to create user');
+    }
+
+    return newUser;
   }
 
   static async getUsers(tenantId, { page, limit }) {
-    const users = await dispatcher
+    const [err, users] = await dispatcher
       .getTenant(tenantId)
       .Users
       .findAll(false, limit, (page - 1) * limit);
     
-    const total = await dispatcher
+    const [countErr, total] = await dispatcher
       .getTenant(tenantId)
       .Users
       .count();
 
-    if (!users) {
+    if (err || !users) {
       throw createError(404, 'No users found');
     }
 
@@ -29,25 +34,25 @@ class UserService {
   }
 
   static async getUser(tenantId, userId) {
-    const user = await dispatcher
+    const [err, user] = await dispatcher
       .getTenant(tenantId)
       .Users
       .findById(userId);
     
-    if (!user) {
+    if (err || !user) {
       throw createError(404, 'User not found');
     }
     
     return user;
   }
 
-  static async updateUser(tenantId, userId, userData) {
-    const user = await dispatcher
+  static async updateUser(tenantId, userId, newUserData) {
+    const [err, user] = await dispatcher
       .getTenant(tenantId)
       .Users
-      .update(userId, userData);
+      .update(userId, newUserData);
     
-    if (!user) {
+    if (err || !user) {
       throw createError(404, 'User not found');
     }
     
@@ -55,12 +60,12 @@ class UserService {
   }
 
   static async deleteUser(tenantId, userId) {
-    const user = await dispatcher
+    const [err, user] = await dispatcher
       .getTenant(tenantId)
       .Users
       .softDelete(userId);
     
-    if (!user) {
+    if (err || !user) {
       throw createError(404, 'User not found');
     }
   }

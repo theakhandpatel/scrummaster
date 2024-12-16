@@ -18,17 +18,17 @@ class TaskController {
       const { tenantId } = request.params;
       const { page = 1, limit = 10, ...filters } = request.query;
       
-      const result = await TaskService.getTasks(tenantId, {
+      const taskResult = await TaskService.getTasks(tenantId, {
         page: parseInt(page),
         limit: parseInt(limit),
         ...filters
       });
       
       reply.send(ResponseFormatter.paginate(
-        result.tasks,
-        result.page,
-        result.limit,
-        result.total
+        taskResult.tasks,
+        taskResult.page,
+        taskResult.limit,
+        taskResult.total
       ));
     } catch (error) {
       reply.code(error.statusCode || 500)

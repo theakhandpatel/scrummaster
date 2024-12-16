@@ -5,8 +5,8 @@ class UserController {
   static async createUser(request, reply) {
     try {
       const { tenantId } = request.params;
-      const user = await UserService.createUser(tenantId, request.body);
-      reply.code(201).send(ResponseFormatter.success(user, 'User created successfully'));
+      const newUser = await UserService.createUser(tenantId, request.body);
+      reply.code(201).send(ResponseFormatter.success(newUser, 'User created successfully'));
     } catch (error) {
       reply.code(error.statusCode || 500)
         .send(ResponseFormatter.error(error.message));
